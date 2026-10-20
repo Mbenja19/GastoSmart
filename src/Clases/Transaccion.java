@@ -1,16 +1,20 @@
 package Clases;
 
+import java.time.LocalDate;
+
 public abstract class Transaccion {
     private static int contador = 0; // static: UNO solo para todas las transacciones
     private final int id; // final: se asigna una vez y ya no cambia
     private double monto;
+    private LocalDate fecha;
     private String descripcion;
     private String categoria;
 
-    public Transaccion(double monto, String descripcion, String categoria) {
+    public Transaccion(double monto, LocalDate fecha, String descripcion, String categoria) {
         contador++;
         this.id = contador;
         this.monto = monto;
+        this.fecha = fecha;
         this.descripcion = descripcion;
         this.categoria = categoria;
     }
@@ -46,9 +50,18 @@ public abstract class Transaccion {
     public void setCategoria(String categoria) {
         this.categoria = categoria;
     }
+
+    public LocalDate getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(LocalDate fecha) {
+        this.fecha = fecha;
+    }
+
     @Override
     public String toString() {
-        return "#" + id + " | " + getTipo() + " | " + categoria
-                + " | S/ " + monto + " | " + descripcion;
+        return String.format("#%d | %-7s | %-12s | %s | S/ %.2f | %s",
+                id, getTipo(), categoria, fecha, monto, descripcion);
     }
 }
