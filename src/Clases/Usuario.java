@@ -115,5 +115,4 @@ public class Usuario {
     public PresupuestoMensual getPresupuesto() {
         return presupuesto;
     }
-
 }
