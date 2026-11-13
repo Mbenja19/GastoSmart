@@ -1,8 +1,14 @@
 package Clases;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 
-public class Usuario {
+// Clase principal del modelo: guarda las transacciones, categorías, metas y el presupuesto.
+// Implementa la interfaz Evaluable.
+public class Usuario implements Evaluable {
+
+    // Si una compra usa más del 30% del dinero libre, se considera "con riesgo"
+    public static final double LIMITE_RIESGO = 0.30; // <-- NUEVO
 
     private static int contador = 0;
 
@@ -13,6 +19,7 @@ public class Usuario {
     private double saldoActual;
     private ArrayList<Transaccion> transacciones;
     private ArrayList<Categoria> categorias;
+    private ArrayList<Meta> metas;
     private PresupuestoMensual presupuesto;
 
     public Usuario(String nombre, String correo) {
@@ -25,21 +32,22 @@ public class Usuario {
         // Composición: el Usuario crea y es dueño de estos objetos
         this.transacciones = new ArrayList<>();
         this.categorias = new ArrayList<>();
+        this.metas = new ArrayList<>();
         this.presupuesto = new PresupuestoMensual(0);
-        // El UML dice 1..* categorías: siempre habrá al menos "General"
-        this.categorias.add(new Categoria("General", false, 0));
+        this.categorias.add(new Categoria("General", false, 0)); // el UML pide al menos 1 categoría
     }
 
-    // ---------- métodos del UML ----------
     public void agregarTransaccion(Transaccion t) {
         transacciones.add(t);
-        calcularSaldo(); // actualiza saldoActual
+        calcularSaldo();
     }
 
     public double calcularSaldo() {
         double saldo = dineroInicial;
         for (Transaccion t : transacciones) {
-            saldo = saldo + t.getEfectoEnSaldo(); // polimorfismo
+            // Polimorfismo: cada transacción sabe cómo afecta al saldo (Ingreso suma, Gasto
+            // y Ahorro restan)
+            saldo = saldo + t.getEfectoEnSaldo();
         }
         saldoActual = Math.round(saldo * 100.0) / 100.0;
         return saldoActual;
@@ -65,12 +73,77 @@ public class Usuario {
         return resultado;
     }
 
-    // ---------- método que faltaba en el UML ----------
     public void agregarCategoria(Categoria categoria) {
         categorias.add(categoria);
     }
 
-    // ---------- getters y setters ----------
+    public void agregarMeta(Meta meta) {
+        metas.add(meta);
+    }
+
+    // Abonar = sumar a la meta + restar del saldo (se registra como un Ahorro)
+    public void abonarAMeta(Meta meta, double monto) {
+        meta.agregarAhorro(monto);
+        agregarTransaccion(new Ahorro(monto, "Ahorro para " + meta.getNombre()));
+    }
+
+    // throws: avisa que este método puede lanzar un error.
+    // throw new: lanza el error cuando el monto es mayor al saldo.
+    public void validarSaldo(double monto) throws SaldoInsuficienteException {
+        if (monto > saldoActual) {
+            throw new SaldoInsuficienteException(
+                    "No te alcanza. Tienes S/ " + saldoActual + " y necesitas S/ " + monto);
+        }
+    }
+
+    // Cuánto se gastó ESTE MES en una categoría
+    public double calcularGastadoEnCategoria(Categoria categoria) {
+        LocalDate hoy = LocalDate.now();
+        double total = 0;
+        for (Transaccion t : transacciones) {
+            boolean esGasto = t instanceof Gasto;
+            boolean mismaCategoria = t.getCategoria().equalsIgnoreCase(categoria.getNombre());
+            boolean esDeEsteMes = t.getFecha().getMonthValue() == hoy.getMonthValue()
+                    && t.getFecha().getYear() == hoy.getYear();
+            if (esGasto && mismaCategoria && esDeEsteMes) {
+                total = total + t.getMonto();
+            }
+        }
+        return total;
+    }
+
+    // Dinero libre = saldo - lo que aún falta cubrir de las categorías esenciales
+    // activas
+    public double calcularDineroLibre() {
+        double pendiente = 0;
+        for (Categoria c : categorias) {
+            if (c.isEsencial() && c.isActiva()) {
+                double falta = c.getMontoReservado() - calcularGastadoEnCategoria(c);
+                if (falta > 0) {
+                    pendiente = pendiente + falta;
+                }
+            }
+        }
+        double libre = calcularSaldo() - pendiente;
+        if (libre < 0) {
+            libre = 0;
+        }
+        return Math.round(libre * 100.0) / 100.0;
+    }
+
+    // Método de la interfaz Evaluable: decide si una compra es viable
+    @Override
+    public String evaluar(double monto) {
+        double libre = calcularDineroLibre();
+        if (monto > libre) {
+            return "NO VIABLE";
+        } else if (monto > libre * LIMITE_RIESGO) {
+            return "VIABLE CON RIESGO";
+        } else {
+            return "VIABLE";
+        }
+    }
+
     public int getId() {
         return id;
     }
@@ -97,7 +170,7 @@ public class Usuario {
 
     public void setDineroInicial(double dineroInicial) {
         this.dineroInicial = dineroInicial;
-        calcularSaldo(); // al cambiar el dinero inicial, se recalcula el saldo
+        calcularSaldo(); // al cambiar el dinero inicial se recalcula el saldo
     }
 
     public double getSaldoActual() {
@@ -110,6 +183,10 @@ public class Usuario {
 
     public ArrayList<Categoria> getCategorias() {
         return categorias;
+    }
+
+    public ArrayList<Meta> getMetas() {
+        return metas;
     }
 
     public PresupuestoMensual getPresupuesto() {

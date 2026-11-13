@@ -2,8 +2,10 @@ package Clases;
 
 import java.time.LocalDate;
 
+// Clase abstracta: es el molde común de todo movimiento de dinero.
+// No se puede hacer "new Transaccion"; se usan sus hijas: Ingreso, Gasto y Ahorro.
 public abstract class Transaccion {
-    private static int contador = 0; // static: UNO solo para todas las transacciones
+    private static int contador = 0; // static: un solo contador compartido por todos los objetos
     private final int id; // final: se asigna una vez y ya no cambia
     private double monto;
     private LocalDate fecha;
@@ -12,13 +14,14 @@ public abstract class Transaccion {
 
     public Transaccion(double monto, LocalDate fecha, String descripcion, String categoria) {
         contador++;
-        this.id = contador;
+        this.id = contador; // cada transacción recibe un id único y automático
         this.monto = monto;
         this.fecha = fecha;
         this.descripcion = descripcion;
         this.categoria = categoria;
     }
 
+    // Métodos abstractos: no tienen cuerpo, cada hija los escribe a su manera
     public abstract double getEfectoEnSaldo();
 
     public abstract String getTipo();

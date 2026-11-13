@@ -1,6 +1,9 @@
 package Clases;
 
+// Agrupa los gastos (Comida, Transporte, etc.).
+// esencial = es una necesidad, activa = se puede usar, montoReservado = dinero apartado para ella.
 public class Categoria {
+
     private String nombre;
     private boolean esencial;
     private boolean activa;
@@ -52,7 +55,7 @@ public class Categoria {
 
     @Override
     public String toString() {
-        String tipo = esencial ? "esencial" : "no esencial";
+        String tipo = esencial ? "esencial" : "no esencial"; // condición ? si es true : si es false
         String estado = activa ? "activa" : "inactiva";
         return String.format("%s | %s | %s | reservado S/ %.2f", nombre, tipo, estado, montoReservado);
     }

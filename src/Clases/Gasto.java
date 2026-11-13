@@ -2,11 +2,12 @@ package Clases;
 
 import java.time.LocalDate;
 
+// Hija de Transaccion: representa dinero que sale. Pertenece a una Categoria.
 public class Gasto extends Transaccion {
 
     private Categoria categoriaGasto;
 
-    // Constructor 1: con categoría
+    // Sobrecarga de constructores: uno recibe la categoría y el otro no
     public Gasto(double monto, String descripcion, Categoria categoria) {
         super(monto, LocalDate.now(), descripcion, categoria.getNombre());
         this.categoriaGasto = categoria;
@@ -14,7 +15,7 @@ public class Gasto extends Transaccion {
 
     // Constructor 2: sin categoría (usa "General")
     public Gasto(double monto, String descripcion) {
-        this(monto, descripcion, new Categoria("General", false, 0));
+        this(monto, descripcion, new Categoria("General", false, 0)); // si no se indica, usa "General"
     }
 
     public Categoria getCategoriaGasto() {
@@ -29,7 +30,7 @@ public class Gasto extends Transaccion {
 
     @Override
     public double getEfectoEnSaldo() {
-        return -getMonto(); // un gasto RESTA del saldo
+        return -getMonto(); // un gasto resta del saldo
     }
 
     @Override
