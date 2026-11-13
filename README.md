@@ -1,18 +1,70 @@
-## Getting Started
+# GastoSmart – Control de gastos
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+**GastoSmart** es una aplicación de consola desarrollada en Java, con programación orientada a objetos, que ayuda a estudiantes universitarios a registrar sus ingresos y gastos, organizarlos por categorías y controlar su presupuesto mensual.
 
-## Folder Structure
+## Requisitos
 
-The workspace contains two folders by default, where:
+| Requisito | Detalle |
+| --- | --- |
+| Java | JDK 8 o superior (el programa usa `LocalDate`) |
+| Editor (opcional) | Visual Studio Code con el *Extension Pack for Java* |
+| Sistema operativo | Cualquiera con Java instalado |
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+## Instalación y ejecución
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+### Desde Visual Studio Code
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/Mbenja19/GastoSmart.git
+   ```
+2. Abre la carpeta `GastoSmart` en Visual Studio Code.
+3. Abre el archivo `src/App.java`.
+4. Pulsa **Run** (▶) sobre el método `main`.
+5. El programa se ejecuta en la terminal integrada.
 
-## Dependency Management
+## Manual de usuario
 
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+### 1. Inicio del programa y configuración inicial
+
+Al ejecutar GastoSmart, el sistema solicita cuatro datos, uno por uno:
+
+| Dato | Descripción |
+| --- | --- |
+| **Tu nombre** | Nombre con el que te saludará el sistema. |
+| **Tu correo** | Correo electrónico del usuario. |
+| **Dinero con el que empiezas** | Saldo inicial disponible, en soles (S/). |
+| **Presupuesto máximo para este mes** | Límite de gasto para el mes, en soles (S/). |
+
+
+> Ningún dato puede quedar vacío, y los montos deben ser números válidos.
+
+### Menú principal
+
+Después de la configuración, aparece el menú principal. El **saldo actual** se muestra siempre en el encabezado y se actualiza después de cada operación.
+
+```
+========== MENÚ (saldo: S/ 1000.00) ==========
+1. Registrar ingreso
+2. Registrar gasto
+3. Ver movimientos
+4. Ver saldo y presupuesto del mes
+5. Agregar categoría
+6. Ver categorías
+7. Filtrar movimientos por categoría
+8. Activar o desactivar una categoría
+0. Salir
+Elige una opción:
+```
+
+Para usar una función, escribe el **número** de la opción y pulsa **Enter**.
+
+### Opción 1: Registrar ingreso
+
+Sirve para anotar dinero que recibes (mesada, sueldo, venta, propina, etc.). El sistema pide:
+
+1. **Monto del ingreso**: debe ser mayor que cero.
+2. **Descripción**: texto breve que identifique el ingreso.
+
+El saldo aumenta automáticamente.
+
