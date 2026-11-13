@@ -1,6 +1,5 @@
 package Clases;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 
 // Clase principal del modelo: guarda las transacciones, categorías, metas y el presupuesto.
@@ -40,6 +39,21 @@ public class Usuario implements Evaluable {
     public void agregarTransaccion(Transaccion t) {
         transacciones.add(t);
         calcularSaldo();
+    }
+
+    // Registra el gasto y descuenta la reserva de su categoría.
+    // Si la reserva se consume por completo, elimina la categoría y devuelve true.
+    public boolean agregarGasto(Gasto gasto) {
+        agregarTransaccion(gasto);
+        Categoria categoria = gasto.getCategoriaGasto();
+        if (categoria.getMontoReservado() > 0) {
+            categoria.consumirReserva(gasto.getMonto());
+            if (categoria.getMontoReservado() == 0) {
+                categorias.remove(categoria);
+                return true;
+            }
+        }
+        return false;
     }
 
     public double calcularSaldo() {
@@ -96,32 +110,24 @@ public class Usuario implements Evaluable {
         }
     }
 
-    // Cuánto se gastó ESTE MES en una categoría
-    public double calcularGastadoEnCategoria(Categoria categoria) {
-        LocalDate hoy = LocalDate.now();
-        double total = 0;
-        for (Transaccion t : transacciones) {
-            boolean esGasto = t instanceof Gasto;
-            boolean mismaCategoria = t.getCategoria().equalsIgnoreCase(categoria.getNombre());
-            boolean esDeEsteMes = t.getFecha().getMonthValue() == hoy.getMonthValue()
-                    && t.getFecha().getYear() == hoy.getYear();
-            if (esGasto && mismaCategoria && esDeEsteMes) {
-                total = total + t.getMonto();
-            }
+    // Igual que validarSaldo, pero respeta el dinero reservado para las categorías
+    // esenciales
+    public void validarDineroLibre(double monto) throws SaldoInsuficienteException {
+        double libre = calcularDineroLibre();
+        if (monto > libre) {
+            throw new SaldoInsuficienteException(
+                    "No puedes ahorrar eso: tu dinero libre es S/ " + libre
+                            + " (el resto está reservado para tus necesidades).");
         }
-        return total;
     }
 
-    // Dinero libre = saldo - lo que aún falta cubrir de las categorías esenciales
-    // activas
+    // Dinero libre = saldo - lo que aún queda reservado en las categorías
+    // esenciales activas
     public double calcularDineroLibre() {
         double pendiente = 0;
         for (Categoria c : categorias) {
             if (c.isEsencial() && c.isActiva()) {
-                double falta = c.getMontoReservado() - calcularGastadoEnCategoria(c);
-                if (falta > 0) {
-                    pendiente = pendiente + falta;
-                }
+                pendiente = pendiente + c.getMontoReservado();
             }
         }
         double libre = calcularSaldo() - pendiente;

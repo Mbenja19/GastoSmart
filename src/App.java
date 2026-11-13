@@ -23,8 +23,9 @@ public class App {
         System.out.println("==================================");
 
         // Los datos del usuario se piden al ejecutar el programa
-        String nombre = leerTexto("Tu nombre: ");
-        String correo = leerTexto("Tu correo: ");
+
+        String nombre = leerNombre("Tu nombre: ");
+        String correo = leerCorreo("Tu correo: ");
         Usuario usuario = new Usuario(nombre, correo);
         usuario.setDineroInicial(leerNumeroNoNegativo("Dinero con el que empiezas: S/ "));
         usuario.getPresupuesto().modificarMonto(leerNumeroNoNegativo("Presupuesto máximo para este mes: S/ "));
@@ -139,8 +140,16 @@ public class App {
         }
 
         String descripcion = leerTexto("Descripción: ");
-        usuario.agregarTransaccion(new Gasto(monto, descripcion, categoria));
+        boolean reservaCompletada = usuario.agregarGasto(new Gasto(monto, descripcion, categoria));
         System.out.printf("Gasto registrado. Saldo actual: S/ %.2f%n", usuario.getSaldoActual());
+
+        // Aviso del estado de la reserva de la categoría
+        if (reservaCompletada) {
+            System.out.println("¡Reserva de \"" + categoria.getNombre() + "\" completada! La categoría fue eliminada.");
+        } else if (categoria.getMontoReservado() > 0) {
+            System.out.printf("Reserva de %s: te quedan S/ %.2f.%n", categoria.getNombre(),
+                    categoria.getMontoReservado());
+        }
 
         // Aviso si se pasó del presupuesto del mes
         double restante = usuario.getPresupuesto().calcularRestante(usuario.getTransacciones());
@@ -241,8 +250,10 @@ public class App {
             System.out.println("El monto debe ser mayor a 0.");
             return;
         }
+        // Se valida contra el dinero libre: no se puede ahorrar lo reservado para
+        // necesidades
         try {
-            usuario.validarSaldo(monto);
+            usuario.validarDineroLibre(monto);
         } catch (SaldoInsuficienteException e) {
             System.out.println(e.getMessage());
             return;
@@ -349,6 +360,46 @@ public class App {
             return null;
         }
         return usuario.getMetas().get(numero - 1);
+    }
+
+    // Nombre: solo acepta letras y espacios (no números ni símbolos)
+    public static String leerNombre(String mensaje) {
+        while (true) {
+            String texto = leerTexto(mensaje);
+            boolean valido = true;
+            for (int i = 0; i < texto.length(); i++) {
+                char c = texto.charAt(i);
+                if (!Character.isLetter(c) && c != ' ') {
+                    valido = false;
+                }
+            }
+            if (valido) {
+                return texto;
+            }
+            System.out.println("El nombre solo puede tener letras y espacios.");
+        }
+    }
+
+    // Correo: repite la pregunta hasta que tenga un formato válido
+    public static String leerCorreo(String mensaje) {
+        String correo = leerTexto(mensaje);
+        while (!esCorreoValido(correo)) {
+            System.out.println("Correo no válido. Ejemplo: nombre@correo.com");
+            correo = leerTexto(mensaje);
+        }
+        return correo;
+    }
+
+    // Formato básico: un solo @, algo antes del @, un punto después del @, algo
+    // después del punto y sin espacios
+    public static boolean esCorreoValido(String correo) {
+        int arroba = correo.indexOf('@');
+        int punto = correo.lastIndexOf('.');
+        return !correo.contains(" ")
+                && arroba > 0
+                && arroba == correo.lastIndexOf('@')
+                && punto > arroba + 1
+                && punto < correo.length() - 1;
     }
 
     // Validación de entrada: no deja que el texto quede vacío

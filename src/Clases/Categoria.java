@@ -24,6 +24,14 @@ public class Categoria {
         this.activa = false;
     }
 
+    // Descuenta de la reserva lo que se gastó (nunca baja de 0)
+    public void consumirReserva(double monto) {
+        montoReservado = Math.round((montoReservado - monto) * 100.0) / 100.0;
+        if (montoReservado < 0) {
+            montoReservado = 0;
+        }
+    }
+
     // ----- getters y setters -----
     public String getNombre() {
         return nombre;
