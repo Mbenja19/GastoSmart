@@ -6,6 +6,7 @@ import java.util.ArrayList;
 // Tope de gasto del mes. Calcula cuánto se gastó este mes y cuánto queda.
 public class PresupuestoMensual {
     private double montoMaximo;
+    private int idInicio = 0; // solo cuentan los gastos con id mayor a este (para empezar de cero)
 
     public PresupuestoMensual(double montoMaximo) {
         this.montoMaximo = montoMaximo;
@@ -15,6 +16,13 @@ public class PresupuestoMensual {
         this.montoMaximo = nuevoMonto;
     }
 
+    // Empieza un presupuesto de cero: lo gastado hasta ahora deja de contar
+    public void iniciarDeCero(ArrayList<Transaccion> transacciones) {
+        if (!transacciones.isEmpty()) {
+            idInicio = transacciones.get(transacciones.size() - 1).getId(); // id de la última transacción
+        }
+    }
+
     public double calcularTotalGastos(ArrayList<Transaccion> transacciones) {
         LocalDate hoy = LocalDate.now();
         double total = 0;
@@ -22,7 +30,8 @@ public class PresupuestoMensual {
             boolean esGasto = t instanceof Gasto; // instanceof: ¿este objeto es un Gasto?
             boolean esDeEsteMes = t.getFecha().getMonthValue() == hoy.getMonthValue()
                     && t.getFecha().getYear() == hoy.getYear();
-            if (esGasto && esDeEsteMes) {
+            boolean esDelPresupuestoActual = t.getId() > idInicio;
+            if (esGasto && esDeEsteMes && esDelPresupuestoActual) {
                 total = total + t.getMonto();
             }
         }

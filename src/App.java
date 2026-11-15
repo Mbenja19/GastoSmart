@@ -28,7 +28,8 @@ public class App {
         String correo = leerCorreo("Tu correo: ");
         Usuario usuario = new Usuario(nombre, correo);
         usuario.setDineroInicial(leerNumeroNoNegativo("Dinero con el que empiezas: S/ "));
-        usuario.getPresupuesto().modificarMonto(leerNumeroNoNegativo("Presupuesto máximo para este mes: S/ "));
+        usuario.getPresupuesto()
+                .modificarMonto(leerNumeroNoNegativo("Presupuesto máximo para este mes (0 = sin presupuesto): S/ "));
 
         System.out.println("\n¡Hola, " + usuario.getNombre() + "! Ya puedes empezar.");
 
@@ -76,6 +77,9 @@ public class App {
                 case 12:
                     usarAsistente(usuario);
                     break;
+                case 13:
+                    cambiarPresupuesto(usuario);
+                    break;
                 case 0:
                     System.out.println("¡Hasta pronto, " + usuario.getNombre() + "!");
                     break;
@@ -99,6 +103,7 @@ public class App {
         System.out.println("10. Abonar a una meta de ahorro");
         System.out.println("11. Ver mis metas de ahorro");
         System.out.println("12. Asistente de compra: ¿puedo comprar esto?");
+        System.out.println("13. Cambiar el presupuesto del mes");
         System.out.println("0. Salir");
     }
 
@@ -151,10 +156,17 @@ public class App {
                     categoria.getMontoReservado());
         }
 
-        // Aviso si se pasó del presupuesto del mes
-        double restante = usuario.getPresupuesto().calcularRestante(usuario.getTransacciones());
-        if (restante < 0) {
-            System.out.printf("¡CUIDADO! Superaste tu presupuesto mensual por S/ %.2f%n", Math.abs(restante));
+        // Avisos del presupuesto del mes (si es 0, no hay presupuesto y no se avisa)
+        PresupuestoMensual p = usuario.getPresupuesto();
+        if (p.getMontoMaximo() > 0) {
+            double restante = p.calcularRestante(usuario.getTransacciones());
+            if (restante < 0) {
+                System.out.printf(
+                        "¡CUIDADO! Superaste tu presupuesto mensual por S/ %.2f (puedes cambiarlo con la opción 13).%n",
+                        Math.abs(restante));
+            } else if (restante <= p.getMontoMaximo() * 0.20) {
+                System.out.printf("Atención: te quedan solo S/ %.2f de tu presupuesto mensual.%n", restante);
+            }
         }
     }
 
@@ -164,9 +176,15 @@ public class App {
 
         System.out.println("\n--- RESUMEN ---");
         System.out.printf("Saldo actual            : S/ %.2f%n", usuario.calcularSaldo());
-        System.out.printf("Presupuesto del mes     : S/ %.2f%n", p.getMontoMaximo());
-        System.out.printf("Gastado este mes        : S/ %.2f%n", p.calcularTotalGastos(lista));
-        System.out.printf("Te queda del presupuesto: S/ %.2f%n", p.calcularRestante(lista));
+        if (p.getMontoMaximo() > 0) {
+            double gastado = p.calcularTotalGastos(lista);
+            System.out.printf("Presupuesto del mes     : S/ %.2f%n", p.getMontoMaximo());
+            System.out.printf("Gastado en el presupuesto: S/ %.2f%n", gastado);
+            System.out.printf("Te queda del presupuesto: S/ %.2f%n", p.calcularRestante(lista));
+            System.out.println("Presupuesto usado       : " + dibujarBarra(gastado / p.getMontoMaximo() * 100));
+        } else {
+            System.out.println("Presupuesto del mes     : sin presupuesto (opción 13 para definirlo)");
+        }
     }
 
     public static void agregarCategoria(Usuario usuario) {
@@ -215,6 +233,35 @@ public class App {
         } else {
             categoria.activar();
             System.out.println(categoria.getNombre() + " ahora está ACTIVA.");
+        }
+    }
+
+    public static void cambiarPresupuesto(Usuario usuario) {
+        PresupuestoMensual p = usuario.getPresupuesto();
+        ArrayList<Transaccion> lista = usuario.getTransacciones();
+        System.out.printf("Tu presupuesto actual es S/ %.2f%n", p.getMontoMaximo());
+        double nuevo = leerNumeroNoNegativo("Nuevo presupuesto máximo (0 = sin presupuesto): S/ ");
+        p.modificarMonto(nuevo);
+
+        if (nuevo == 0) {
+            System.out.println("Presupuesto desactivado: ya no habrá avisos.");
+            return;
+        }
+
+        // Si ya hay gastos contados, el usuario decide si el nuevo presupuesto los
+        // cuenta o empieza de cero
+        if (p.calcularTotalGastos(lista) > 0) {
+            System.out.printf("Este mes ya gastaste S/ %.2f.%n", p.calcularTotalGastos(lista));
+            if (leerSiNo("¿Empezar el nuevo presupuesto de cero (sin contar lo ya gastado)?")) {
+                p.iniciarDeCero(lista);
+            }
+        }
+
+        double restante = p.calcularRestante(lista);
+        if (restante < 0) {
+            System.out.printf("Presupuesto actualizado, pero ya gastaste S/ %.2f de más.%n", Math.abs(restante));
+        } else {
+            System.out.printf("Presupuesto actualizado. Te quedan S/ %.2f.%n", restante);
         }
     }
 
